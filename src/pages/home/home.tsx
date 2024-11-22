@@ -26,6 +26,7 @@ export default function Home() {
   const [pesquisa, setPesquisa] = useState('');
   const [genres, setGenres] = useState([]);
   const [selectedGenre, setSelectedGenre] = useState('');
+  const [debounceTimer, setDebounceTimer] = useState(null)
 
   async function pegarAnimes(nome = '', genre = '') {
     const API = `https://api.jikan.moe/v4/anime?q=${nome}&genres=${genre}`;
@@ -52,6 +53,21 @@ export default function Home() {
 
   }
 
+
+  function handleInputChange(e) {
+    const value = e.target.value;
+    setPesquisa(value);
+
+    if (debounceTimer) {
+      clearTimeout(debounceTimer);
+    }
+
+    const timer = setTimeout(() => {
+      pegarAnimes(value, selectedGenre); 
+    }, 10000); 
+
+    setDebounceTimer(timer);
+  }
 
   function blur() {
     if (pesquisa.trim() === "") {
@@ -102,19 +118,20 @@ export default function Home() {
         <Carousel>
           <CarouselContent>
             {animesTemp.map((animeTemp) => (
-              <Link to={`/anime/${animeTemp.mal_id}`}>
-                <CarouselItem
-                  key={animeTemp.mal_id}
-                  className="flex justify-center p-2"
-                >
+              <CarouselItem
+                key={animeTemp.mal_id}
+                className="flex justify-center p-2"
+              >
+                <Link to={`/anime/${animeTemp.mal_id}`}>
                   <img
                     src={animeTemp.images.jpg.image_url}
                     alt={animeTemp.title}
                     className="rounded-md shadow-lg w-56 transition hover:scale-105 duration-300"
                   />
-                </CarouselItem>
-              </Link>
+                </Link>
+              </CarouselItem>
             ))}
+
           </CarouselContent>
           <CarouselPrevious />
           <CarouselNext />
@@ -126,7 +143,7 @@ export default function Home() {
         <Input
           className="w-64"
           value={pesquisa}
-          onChange={(e) => setPesquisa(e.target.value)}
+          onChange={handleInputChange}
           onBlur={blur}
           placeholder="Pesquise por nome"
         />
@@ -144,7 +161,7 @@ export default function Home() {
           </SelectTrigger>
           <SelectContent className="bg-zinc-800 p-2 space-y-2 overflow-auto">
             {genres.map((genre) => (
-              <SelectGroup>
+              <SelectGroup key={genre.mal_id}>
                 <SelectItem
                   key={genre.mal_id}
                   value={genre.mal_id.toString()}
@@ -154,6 +171,7 @@ export default function Home() {
                 </SelectItem>
               </SelectGroup>
             ))}
+
           </SelectContent>
         </Select>
       </div>
@@ -161,12 +179,8 @@ export default function Home() {
       {/* Lista de Animes */}
       <div className="flex flex-wrap justify-center gap-6 mt-8 px-4 w-full max-w-7xl">
         {animes.map((anime) => (
-          <Link to={`/anime/${anime.mal_id}`}>
-
-            <div
-              key={anime.mal_id}
-              className="bg-orange-500 p-4 rounded-md shadow-lg hover:shadow-2xl transition hover:scale-105 duration-300 w-72 flex flex-col items-center"
-            >
+          <Link to={`/anime/${anime.mal_id}`} key={anime.mal_id}>
+            <div className="bg-orange-500 p-4 rounded-md shadow-lg hover:shadow-2xl transition hover:scale-105 duration-300 w-72 flex flex-col items-center">
               <img
                 src={anime.images.jpg.image_url}
                 alt={anime.title}
@@ -189,6 +203,7 @@ export default function Home() {
             </div>
           </Link>
         ))}
+
       </div>
     </div>
   );
