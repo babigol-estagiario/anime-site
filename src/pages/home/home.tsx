@@ -7,6 +7,7 @@ import {
   CarouselPrevious,
 } from '@/components/ui/carousel';
 import { Input } from '@/components/ui/input';
+import Swal from 'sweetalert2';
 import {
   Select,
   SelectContent,
@@ -25,10 +26,11 @@ export default function Home() {
   const [animesTemp, setAnimesTemp] = useState([]);
   const [pesquisa, setPesquisa] = useState('');
   const [genres, setGenres] = useState([]);
+  const [favoritos, setFavoritos] = useState([]);
   const [selectedGenre, setSelectedGenre] = useState('');
-  const [debounceTimer, setDebounceTimer] = useState(null)
+  const [debounceTimer, setDebounceTimer] = useState(null);
 
-  async function pegarAnimes(nome = '', genre = '') {
+  async function pegarAnimes(nome: string = '', genre: string = '') {
     const API = `https://api.jikan.moe/v4/anime?q=${nome}&genres=${genre}`;
     const resp = await axios.get(API);
     const data = resp.data;
@@ -49,10 +51,21 @@ export default function Home() {
     setGenres(data.data);
   }
 
-  function salvar() {
+  function favoritar(anime) {
+    setFavoritos((animesFavoritos) => {
+      const animeExistente = animesFavoritos.find((fav) => fav.mal_id === anime.mal_id);
+      let novosFavoritos;
+      
+      if (animeExistente) {
+        novosFavoritos = animesFavoritos.filter((fav) => fav.mal_id !== anime.mal_id);
+      } else {
+        novosFavoritos = [...animesFavoritos, anime];
+      }
 
+      localStorage.setItem('animesFavoritos', JSON.stringify(novosFavoritos));
+      return novosFavoritos
+    });
   }
-
 
   function handleInputChange(e) {
     const value = e.target.value;
@@ -63,30 +76,32 @@ export default function Home() {
     }
 
     const timer = setTimeout(() => {
-      pegarAnimes(value, selectedGenre); 
-    }, 10000); 
+      if (value.trim()) {
+        pegarAnimes(value, selectedGenre);
+      } else {
+        pegarAnimes();
+      }
+    }, 500);
 
     setDebounceTimer(timer);
   }
 
   function blur() {
-    if (pesquisa.trim() === "") {
+    if (!pesquisa.trim()) {
       pegarAnimes();
-      console.log("Pesquisa Feito")
-    } else {
-      pegarAnimes(pesquisa)
     }
   }
 
   useEffect(() => {
-    pegarAnimes();
+    pegarAnimes()
     pegarAnimesTemp();
     pegarGeneros();
-  }, []);
-
-  useEffect(() => {
-    pegarAnimes(pesquisa, selectedGenre);
-  }, [pesquisa, selectedGenre]);
+    return () => {
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
+      }
+    };
+  }, [debounceTimer]);
 
   return (
     <div className="flex flex-col items-center bg-zinc-950 min-h-screen text-white overflow-hidden">
@@ -108,9 +123,13 @@ export default function Home() {
               MyAnimeSite
             </Button>
           </div>
-          <Button onClick={() => {
-            window.location.href = "/profile"
-          }}>Profile</Button>
+          <Button
+            onClick={() => {
+              window.location.href = '/profile';
+            }}
+          >
+            Profile
+          </Button>
         </div>
       </div>
       {/* Carrossel */}
@@ -131,13 +150,11 @@ export default function Home() {
                 </Link>
               </CarouselItem>
             ))}
-
           </CarouselContent>
           <CarouselPrevious />
           <CarouselNext />
         </Carousel>
       </div>
-
       {/* Pesquisa */}
       <div className="flex flex-row p-2 m-2 gap-2 items-center justify-center">
         <Input
@@ -154,13 +171,16 @@ export default function Home() {
           Pesquisar
         </Button>
         <Select
-          onValueChange={(value) => setSelectedGenre(value)}
+          onValueChange={(value) => {
+            setSelectedGenre(value);
+            pegarAnimes(pesquisa, value);
+          }}
         >
           <SelectTrigger className="w-[180px] bg-zinc-800 h-10 rounded-md">
             <SelectValue placeholder="Genres" />
           </SelectTrigger>
           <SelectContent className="bg-zinc-800 p-2 space-y-2 overflow-auto">
-            {genres.map((genre) => (
+            {genres?.map((genre) => (
               <SelectGroup key={genre.mal_id}>
                 <SelectItem
                   key={genre.mal_id}
@@ -171,39 +191,44 @@ export default function Home() {
                 </SelectItem>
               </SelectGroup>
             ))}
-
           </SelectContent>
         </Select>
       </div>
-
       {/* Lista de Animes */}
       <div className="flex flex-wrap justify-center gap-6 mt-8 px-4 w-full max-w-7xl">
         {animes.map((anime) => (
-          <Link to={`/anime/${anime.mal_id}`} key={anime.mal_id}>
-            <div className="bg-orange-500 p-4 rounded-md shadow-lg hover:shadow-2xl transition hover:scale-105 duration-300 w-72 flex flex-col items-center">
-              <img
-                src={anime.images.jpg.image_url}
-                alt={anime.title}
-                className="rounded-md w-full h-fit object-cover"
+          <div className="bg-orange-500 p-4 rounded-md shadow-lg hover:shadow-2xl transition hover:scale-105 duration-300 w-72 flex flex-col items-center gap-2">
+            <img
+              src={anime.images.jpg.image_url}
+              alt={anime.title}
+              className="rounded-md w-full h-fit object-cover"
+            />
+            <h1 className="font-bold mt-2 text-lg text-center">
+              {anime.title}
+            </h1>
+            <span>
+              <HeartIcon
+                className={`hover:scale-110 hover:cursor-pointer hover:text-red-500 ${favoritos.some((fav) => fav.mal_id === anime.mal_id)
+                    ? 'fill-red-500 text-red-500'
+                    : ''
+                  }`}
+                onClick={() => favoritar(anime)}
               />
-              <h1 className="font-bold mt-2 text-lg text-center">{anime.title}</h1>
-              <span><HeartIcon /></span>
-              <p className="font-semibold mt-1">
-                Episodes: {anime.episodes || 'N/A'}
-              </p>
-              <p className="font-semibold text-sm">
-                Rank: #{anime.rank || 'N/A'}
-              </p>
-              <p className="text-sm">
-                Genres: {anime.genres?.map((genre) => genre.name).join(', ') || 'N/A'}
-              </p>
-              <p className="text-sm">
-                {anime.year ? `Year: ${anime.year}` : 'Year: Not Found'}
-              </p>
-            </div>
-          </Link>
+            </span>
+            <p className="font-semibold mt-1">Episodes: {anime.episodes || 'N/A'}</p>
+            <p className="font-semibold text-sm">Rank: #{anime.rank || 'N/A'}</p>
+            <p className="text-sm">
+              Genres:{' '}
+              {anime.genres?.map((genre) => genre.name).join(', ') || 'N/A'}
+            </p>
+            <p className="text-sm">
+              {anime.year ? `Year: ${anime.year}` : 'Year: Not Found'}
+            </p>
+            <Link to={`/anime/${anime.mal_id}`} key={anime.mal_id}>
+              <h1 className='bg-zinc-800 w-18 rounded-md p-2 '>Ver Mais...</h1>
+            </Link>
+          </div>
         ))}
-
       </div>
     </div>
   );

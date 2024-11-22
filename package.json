@@ -22,7 +22,7 @@
     "react-dom": "^18.3.1",
     "react-router": "^7.0.0",
     "router-dom": "^3.0.1",
-    "sweetalert2": "^11.6.13",
+    "sweetalert2": "^11.14.5",
     "tailwind-merge": "^2.5.4",
     "tailwindcss-animate": "^1.0.7"
   },
