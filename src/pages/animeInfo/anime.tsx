@@ -1,13 +1,15 @@
 import { Button } from '@/components/ui/button';
 import axios from 'axios';
-import { Play } from 'lucide-react';
+import { HeartIcon, Play } from 'lucide-react';
 import React, { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router';
+import Swal from 'sweetalert2';
 
 export default function Anime() {
     const { id } = useParams()
 
     const [anime, setAnime] = useState({})
+    const [favoritos, setFavoritos] = useState([]);
 
     async function pegarAnime(anime) {
         const API = `https://api.jikan.moe/v4/anime/${anime}`
@@ -17,10 +19,32 @@ export default function Anime() {
     }
 
     useEffect(() => {
+        const favoritosSalvos = localStorage.getItem('animesFavoritos');
+        if (favoritosSalvos) {
+            setFavoritos(JSON.parse(favoritosSalvos));
+        }
         pegarAnime(id)
     }, [id])
 
+    function favoritar(anime) {
+        setFavoritos((animesFavoritos) => {
+            const animeExistente = animesFavoritos.find((fav) => fav.mal_id === anime.mal_id);
+            let novosFavoritos;
 
+            if (animeExistente) {
+                novosFavoritos = animesFavoritos.filter((fav) => fav.mal_id !== anime.mal_id);
+                Swal.fire({
+                    title: "Concluido",
+                    text: "Você excluiu com sucesso!",
+                    icon: "warning"
+                });
+            } else {
+                novosFavoritos = [...animesFavoritos, anime];
+            }
+            localStorage.setItem('animesFavoritos', JSON.stringify(novosFavoritos));
+            return novosFavoritos;
+        });
+    }
 
 
 
@@ -61,15 +85,24 @@ export default function Anime() {
                             className="m-2 p-2 w-72"
                         />
                         <div>
-                            <h1 className="font-bold m-2 p-2">{anime.title || 'Título não disponível'}</h1>
+                            <div className='flex flex-row items-center m-2 p-2'>
+                                <h1 className="font-bold">{anime.title || 'Título não disponível'}</h1>
+                                <HeartIcon
+                                    className={` m-2 ml-4 hover:scale-110 hover:cursor-pointer hover:text-red-500 ${favoritos.some((fav) => fav.mal_id === anime.mal_id)
+                                        ? 'fill-red-500 text-red-500'
+                                        : ''
+                                        }`}
+                                    onClick={() => favoritar(anime)}
+                                />
+                            </div>
                             <ol className="list-disc pl-5">
-                                <li className="m-2 p-2">Ano: {anime.year || 'Desconhecido'}</li>
+                                <li className="m-2 p-2">Year: {anime.year || 'Desconhecido'}</li>
                                 <li className="m-2 p-2">Rank: #{anime.rank || 'N/A'}</li>
-                                <li className="m-2 p-2">Gêneros: {anime.genres?.map(g => g.name).join(', ') || 'N/A'}</li>
-                                <li className="m-2 p-2">Nota: {anime.score || 'N/A'}</li>
-                                <li className="m-2 p-2">Classificação: {anime.rating || 'N/A'}</li>
-                                <li className="m-2 p-2">Produtores: {anime.producers?.map(p => p.name).join(', ') || 'N/A'}</li>
-                                <li className="m-2 p-2">Temas: {anime.themes?.map(t => t.name).join(', ') || 'N/A'}</li>
+                                <li className="m-2 p-2">Genres: {anime.genres?.map(g => g.name).join(', ') || 'N/A'}</li>
+                                <li className="m-2 p-2">Score: {anime.score || 'N/A'}</li>
+                                <li className="m-2 p-2">Rating: {anime.rating || 'N/A'}</li>
+                                <li className="m-2 p-2">Producers: {anime.producers?.map(p => p.name).join(', ') || 'N/A'}</li>
+                                <li className="m-2 p-2">Themes: {anime.themes?.map(t => t.name).join(', ') || 'N/A'}</li>
                             </ol>
                             <p className="m-2 p-2">{anime.synopsis || 'Sinopse indisponível.'}</p>
                         </div>

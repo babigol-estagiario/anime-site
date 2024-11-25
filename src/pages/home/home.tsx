@@ -58,12 +58,22 @@ export default function Home() {
       
       if (animeExistente) {
         novosFavoritos = animesFavoritos.filter((fav) => fav.mal_id !== anime.mal_id);
+        Swal.fire({
+          title: "Concluido",
+          text: "Você excluiu com sucesso!",
+          icon: "warning"
+        });
       } else {
         novosFavoritos = [...animesFavoritos, anime];
+        Swal.fire({
+          title: "Concluido",
+          text: "Você adicionou com sucesso!",
+          icon: "success"
+        });
       }
 
       localStorage.setItem('animesFavoritos', JSON.stringify(novosFavoritos));
-      return novosFavoritos
+      return novosFavoritos;
     });
   }
 
@@ -96,6 +106,11 @@ export default function Home() {
     pegarAnimes()
     pegarAnimesTemp();
     pegarGeneros();
+    const favoritosSalvos = localStorage.getItem('animesFavoritos')
+    if (favoritosSalvos) {
+      setFavoritos(JSON.parse(favoritosSalvos))
+      console.log(favoritos)
+    }
     return () => {
       if (debounceTimer) {
         clearTimeout(debounceTimer);
@@ -124,9 +139,8 @@ export default function Home() {
             </Button>
           </div>
           <Button
-            onClick={() => {
-              window.location.href = '/profile';
-            }}
+            onClick={() => (window.location.href = '/profile')}
+            className="ml-auto text-white bg-orange-600 hover:bg-orange-500 px-4 py-2 rounded-md m-2 absolute right-2"
           >
             Profile
           </Button>
@@ -162,13 +176,13 @@ export default function Home() {
           value={pesquisa}
           onChange={handleInputChange}
           onBlur={blur}
-          placeholder="Pesquise por nome"
+          placeholder="Search by name..."
         />
         <Button
           onClick={() => pegarAnimes(pesquisa, selectedGenre)}
           className="bg-zinc-800"
         >
-          Pesquisar
+          Search
         </Button>
         <Select
           onValueChange={(value) => {
@@ -179,7 +193,7 @@ export default function Home() {
           <SelectTrigger className="w-[180px] bg-zinc-800 h-10 rounded-md">
             <SelectValue placeholder="Genres" />
           </SelectTrigger>
-          <SelectContent className="bg-zinc-800 p-2 space-y-2 overflow-auto">
+          <SelectContent className="bg-zinc-800 p-2 space-y-2 overflow-auto h-[50rem]">
             {genres?.map((genre) => (
               <SelectGroup key={genre.mal_id}>
                 <SelectItem
@@ -225,7 +239,7 @@ export default function Home() {
               {anime.year ? `Year: ${anime.year}` : 'Year: Not Found'}
             </p>
             <Link to={`/anime/${anime.mal_id}`} key={anime.mal_id}>
-              <h1 className='bg-zinc-800 w-18 rounded-md p-2 '>Ver Mais...</h1>
+              <h1 className='bg-zinc-800 w-18 rounded-md p-2 '>View More...</h1>
             </Link>
           </div>
         ))}
